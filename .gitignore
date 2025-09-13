@@ -26,3 +26,4 @@ dist-ssr
 
 # Other directories and files
 .env.local
+TODO.md
