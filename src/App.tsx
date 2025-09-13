@@ -7,6 +7,7 @@ import Events from "./pages/Events/Events";
 import Gallery from "./pages/Gallery/Gallery";
 import About from "./pages/About/About";
 import Contact from "./pages/Contact/Contact";
+import EventDetails from "./pages/EventDetails/EventDetails";
 import "./styles/globals.css";
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/events" element={<Events />} />
+              <Route path="/events/:id" element={<EventDetails />} />
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
