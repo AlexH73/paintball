@@ -57,11 +57,28 @@ const Admin: React.FC = () => {
   };
 
   const handleLoginSuccess = () => {
-    const token = localStorage.getItem("adminToken");
+    console.log("Login success callback called");
+
+    // Принудительно проверяем аутентификацию сразу после входа
+    console.log(
+      "Token in success callback:",
+      localStorage.getItem("adminToken")
+    );
+
     setIsAuthenticated(true);
+
+    // Дополнительная проверка через короткий промежуток времени
+    setTimeout(() => {
+      const newToken = localStorage.getItem("adminToken");
+      console.log("Token after timeout:", newToken);
+      if (newToken) {
+        setIsAuthenticated(true);
+      }
+    }, 100);
   };
 
   const handleLogout = () => {
+    console.log("Logging out");
     localStorage.removeItem("adminToken");
     setIsAuthenticated(false);
     setEditingEvent(null);
