@@ -18,7 +18,7 @@ const UpcomingEvents = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {upcomingEvents.map((event) => (
           <Card
-            key={event.id}
+            key={event._id}
             className="p-6 hover:shadow-lg transition-shadow"
           >
             <h3 className="text-xl font-semibold mb-2 text-gray-800">
@@ -29,7 +29,7 @@ const UpcomingEvents = () => {
               {event.description}
             </p>
             <Link
-              to={`/events/${event.id}`}
+              to={`/events/${event._id}`}
               className="text-camouflage-500 hover:text-camouflage-600 font-semibold"
             >
               Подробнее →

@@ -1,18 +1,26 @@
 import { useParams, Link } from "react-router-dom";
-import { useApp } from "../../contexts/AppContext/AppContext";
+import { useEvent } from "../../hooks/useEvent/useEvent";
 import Card from "../../components/ui/Card/Card";
 import Button from "../../components/ui/Button/Button";
 
 const EventDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { state } = useApp();
+  const { event, loading, error } = useEvent(id || "");
 
-  const event = state.events.find((event) => event.id === id);
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-camouflage-500 mx-auto"></div>
+        <p className="mt-4">Загрузка события...</p>
+      </div>
+    );
+  }
 
-  if (!event) {
+  if (error || !event) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Событие не найдено</h2>
+        <p className="text-red-500 mb-4">{error}</p>
         <Link to="/events">
           <Button>Вернуться к событиям</Button>
         </Link>
@@ -54,7 +62,7 @@ const EventDetails = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Фотографии</h2>
-          {event.photos.length > 0 ? (
+          {event.photos && event.photos.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               {event.photos.map((photo, index) => (
                 <img
@@ -72,7 +80,7 @@ const EventDetails = () => {
 
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Видео</h2>
-          {event.videos.length > 0 ? (
+          {event.videos && event.videos.length > 0 ? (
             <div className="space-y-4">
               {event.videos.map((video, index) => (
                 <div key={index} className="aspect-video">

@@ -8,7 +8,9 @@ import Gallery from "./pages/Gallery/Gallery";
 import About from "./pages/About/About";
 import Contact from "./pages/Contact/Contact";
 import EventDetails from "./pages/EventDetails/EventDetails";
+import Admin from "./pages/Admin/Admin";
 import "./styles/globals.css";
+import DebugInfo from "./components/ui/DebugInfo/DebugInfo";
 
 function App() {
   return (
@@ -24,9 +26,11 @@ function App() {
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </main>
           <Footer />
+          <DebugInfo />
         </div>
       </Router>
     </AppProvider>

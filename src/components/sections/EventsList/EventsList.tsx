@@ -13,7 +13,10 @@ const EventsList = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {events.map((event) => (
-        <Card key={event.id} className="p-6 hover:shadow-lg transition-shadow">
+        <Card
+          key={event._id || event.id}
+          className="p-6 hover:shadow-lg transition-shadow"
+        >
           <h3 className="text-xl font-semibold mb-2 text-gray-800">
             {event.title}
           </h3>
@@ -21,10 +24,10 @@ const EventsList = () => {
           <p className="text-gray-700 mb-4 line-clamp-3">{event.description}</p>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">
-              {event.participants.length} участников
+              {event.participants?.length || 0} участников
             </span>
             <Link
-              to={`/events/${event.id}`}
+              to={`/events/${event._id || event.id}`}
               className="bg-camouflage-500 hover:bg-camouflage-600 text-white px-4 py-2 rounded transition-colors"
             >
               Подробнее

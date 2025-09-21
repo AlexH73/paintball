@@ -1,44 +1,48 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useApp } from "../../contexts/AppContext/AppContext";
+import type { Event } from "../../types/Event";
 
-// Временные моковые данные
-const mockEvents = [
-  {
-    id: "1",
-    title: "Весенний турнир 2024",
-    date: "15 мая 2024",
-    description:
-      "Присоединяйтесь к нашему весеннему турниру! Шашлыки, пиво и отличная игра.",
-    participants: ["Алексей", "Дмитрий", "Сергей", "Иван"],
-    photos: [],
-    videos: [],
-  },
-  {
-    id: "2",
-    title: "Летние игры",
-    date: "20 июня 2024",
-    description: "Летний сезон открыт! Ждем всех на поле.",
-    participants: ["Алексей", "Дмитрий", "Сергей"],
-    photos: [],
-    videos: [],
-  },
-];
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
+// Добавим глобальную переменную для кеширования
+let eventsCache: Event[] | null = null;
 
 export const useEvents = () => {
   const { state, dispatch } = useApp();
+  const isFetching = useRef(false);
 
   useEffect(() => {
-    const loadEvents = async () => {
+    const fetchEvents = async () => {
+      // Если уже загружаем или есть кеш, пропускаем
+      if (isFetching.current || eventsCache) {
+        if (eventsCache) {
+          dispatch({ type: "SET_EVENTS", payload: eventsCache });
+        }
+        return;
+      }
+
+      isFetching.current = true;
       dispatch({ type: "SET_LOADING", payload: true });
 
-      // Имитация загрузки данных
-      setTimeout(() => {
-        dispatch({ type: "SET_EVENTS", payload: mockEvents });
+      try {
+        const response = await fetch(`${API_BASE}/events`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch events");
+        }
+
+        const events: Event[] = await response.json();
+        eventsCache = events; // Сохраняем в кеш
+        dispatch({ type: "SET_EVENTS", payload: events });
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
         dispatch({ type: "SET_LOADING", payload: false });
-      }, 1000);
+        isFetching.current = false;
+      }
     };
 
-    loadEvents();
+    fetchEvents();
   }, [dispatch]);
 
   return {
