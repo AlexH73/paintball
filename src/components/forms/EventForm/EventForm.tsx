@@ -1,16 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Event } from "../../../types/Event";
 import ImageUpload from "../ImageUpload/ImageUpload";
 
 interface EventFormProps {
+  existingEvent?: Event;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
-const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel }) => {
+const EventForm: React.FC<EventFormProps> = ({
+  existingEvent,
+  onSuccess,
+  onCancel,
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -29,7 +34,47 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel }) => {
     location: "",
   });
 
-  const navigate = useNavigate(); // Добавляем навигацию
+  const navigate = useNavigate();
+
+  // Инициализация формы при монтировании или изменении existingEvent
+  useEffect(() => {
+    if (existingEvent) {
+      // Преобразуем дату для input[type="date"]
+      const dateForInput = existingEvent.date
+        ? new Date(existingEvent.date).toISOString().split("T")[0]
+        : "";
+
+      setFormData({
+        ...existingEvent,
+        date: dateForInput,
+      });
+
+      setUploadedImages(existingEvent.photos || []);
+
+      setEventFormData({
+        title: existingEvent.title,
+        date: dateForInput,
+        location: existingEvent.location,
+      });
+    } else {
+      // Сброс формы для создания нового события
+      setFormData({
+        title: "",
+        date: "",
+        location: "",
+        description: "",
+        participants: [],
+        photos: [],
+        videos: [],
+      });
+      setUploadedImages([]);
+      setEventFormData({
+        title: "",
+        date: "",
+        location: "",
+      });
+    }
+  }, [existingEvent]);
 
   const handleImageUpload = (imageUrl: string) => {
     const newImages = [...uploadedImages, imageUrl];
@@ -61,28 +106,48 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel }) => {
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch(`${API_BASE}/events`, {
-        method: "POST",
+      // Подготовка данных для отправки
+      const payload = {
+        ...formData,
+        date: new Date(formData.date as string).toISOString(),
+        photos: uploadedImages,
+      };
+
+      // Удаляем _id при создании нового события
+      if (!existingEvent && payload._id) {
+        delete payload._id;
+      }
+
+      const url = existingEvent
+        ? `${API_BASE}/events/${existingEvent._id}`
+        : `${API_BASE}/events`;
+
+      const method = existingEvent ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create event");
+        throw new Error(errorData.error || "Failed to save event");
       }
 
-      // Вызываем колбэк успеха если он есть
       if (onSuccess) {
         onSuccess();
       }
 
-      alert("Событие успешно создано!");
+      alert(
+        existingEvent
+          ? "Событие успешно обновлено!"
+          : "Событие успешно создано!"
+      );
 
-      // Перенаправляем на страницу событий
       navigate("/events");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -91,13 +156,13 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel }) => {
     }
   };
 
-const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-) => {
-  const { name, value } = e.target;
-  setFormData((prev) => ({ ...prev, [name]: value }));
-  setEventFormData((prev) => ({ ...prev, [name]: value })); // Обновляем eventFormData
-};
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setEventFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleParticipantsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const participants = e.target.value
@@ -109,7 +174,9 @@ const handleChange = (
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Добавить новое событие</h2>
+      <h2 className="text-2xl font-bold mb-4">
+        {existingEvent ? "Редактировать событие" : "Добавить новое событие"}
+      </h2>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -186,6 +253,7 @@ const handleChange = (
             type="text"
             id="participants"
             name="participants"
+            defaultValue={formData.participants?.join(", ")}
             onChange={handleParticipantsChange}
             placeholder="Иван, Алексей, Дмитрий"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-camouflage-500"
@@ -240,22 +308,26 @@ const handleChange = (
         </div>
 
         <div className="flex justify-end space-x-4 pt-4">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Отмена
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Отмена
+          </button>
 
           <button
             type="submit"
             disabled={isSubmitting}
             className="bg-camouflage-500 hover:bg-camouflage-600 text-white font-bold py-2 px-4 rounded-md transition-colors disabled:opacity-50"
           >
-            {isSubmitting ? "Создание..." : "Создать событие"}
+            {isSubmitting
+              ? existingEvent
+                ? "Обновление..."
+                : "Создание..."
+              : existingEvent
+              ? "Обновить событие"
+              : "Создать событие"}
           </button>
         </div>
       </form>

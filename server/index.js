@@ -3,10 +3,20 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb");
 const uploadRoutes = require("./routes/upload");
-// require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Middleware для проверки аутентификации
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+
+  if (!token || token !== process.env.ADMIN_TOKEN) {
+    return res.status(401).json({ error: "Неавторизованный доступ" });
+  }
+
+  next();
+};
 
 app.use(
   cors({
@@ -97,8 +107,8 @@ app.get("/api/events/:id", async (req, res) => {
   }
 });
 
-// Создать новое событие
-app.post("/api/events", async (req, res) => {
+// Создать новое событие (требует аутентификации)
+app.post("/api/events", authenticate, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
@@ -116,6 +126,47 @@ app.post("/api/events", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to create event" });
+  }
+});
+
+// Обновить событие (требует аутентификации)
+app.patch("/api/events/:id", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body, updatedAt: new Date() };
+
+    const result = await db
+      .collection("events")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Событие не найдено" });
+    }
+
+    res.json({ message: "Событие обновлено!", eventId: id });
+  } catch (error) {
+    console.error("Ошибка при обновлении события:", error);
+    res.status(500).json({ error: "Не удалось обновить событие" });
+  }
+});
+
+// Удалить событие (требует аутентификации)
+app.delete("/api/events/:id", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.collection("events").deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Событие не найдено" });
+    }
+
+    res.json({ message: "Событие удалено!" });
+  } catch (error) {
+    console.error("Ошибка при удалении события:", error);
+    res.status(500).json({ error: "Не удалось удалить событие" });
   }
 });
 
@@ -138,6 +189,7 @@ connectToMongo().then(() => {
       "CLOUDINARY_API_SECRET:",
       process.env.CLOUDINARY_API_SECRET ? "SET" : "MISSING"
     );
+    console.log("ADMIN_TOKEN:", process.env.ADMIN_TOKEN ? "SET" : "MISSING");
   });
 });
 
