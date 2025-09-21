@@ -23,11 +23,6 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel }) => {
     photos: [],
     videos: [],
   });
-  const [eventData, setEventData] = useState({
-    title: "",
-    date: "",
-    location: "",
-  });
   const [eventFormData, setEventFormData] = useState({
     title: "",
     date: "",

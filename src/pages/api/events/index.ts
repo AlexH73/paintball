@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import clientPromise from "../../../lib/mongodb";
 import type { Event } from "../../../types/Event";
 
