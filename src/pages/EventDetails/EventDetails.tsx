@@ -63,13 +63,14 @@ const EventDetails = () => {
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Фотографии</h2>
           {event.photos && event.photos.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {event.photos.map((photo, index) => (
                 <img
                   key={index}
                   src={photo}
-                  alt={`Фото с события ${event.title}`}
-                  className="rounded-lg"
+                  alt={`Фото с события ${event.title} ${index + 1}`}
+                  className="rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => window.open(photo, "_blank")}
                 />
               ))}
             </div>

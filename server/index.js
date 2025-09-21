@@ -1,14 +1,27 @@
+require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb");
-require("dotenv").config();
+const uploadRoutes = require("./routes/upload");
+// require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.use(
+  cors({
+    origin: "http://localhost:5173", // URL фронтенда
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 // Middleware
-app.use(cors());
+app.options("*", cors());
 app.use(express.json());
+app.use("/api/upload", uploadRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // Подключение к MongoDB
 let db;
@@ -61,26 +74,26 @@ app.get("/api/events", async (req, res) => {
 });
 
 // Получить событие по ID
-app.get('/api/events/:id', async (req, res) => {
+app.get("/api/events/:id", async (req, res) => {
   try {
-    const event = await db.collection('events').findOne({ 
-      _id: new ObjectId(req.params.id) 
+    const event = await db.collection("events").findOne({
+      _id: new ObjectId(req.params.id),
     });
-    
+
     if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
+      return res.status(404).json({ error: "Event not found" });
     }
-    
+
     // Преобразуем ObjectId в строку
     const eventWithStringId = {
       ...event,
       _id: event._id.toString(),
-      id: event._id.toString()
+      id: event._id.toString(),
     };
-    
+
     res.json(eventWithStringId);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch event' });
+    res.status(500).json({ error: "Failed to fetch event" });
   }
 });
 
@@ -111,6 +124,20 @@ connectToMongo().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log("====Current working directory:", process.cwd());
+    console.log("====Environment variables loaded:====");
+    console.log(
+      "CLOUDINARY_CLOUD_NAME:",
+      process.env.CLOUDINARY_CLOUD_NAME ? "SET" : "MISSING"
+    );
+    console.log(
+      "CLOUDINARY_API_KEY:",
+      process.env.CLOUDINARY_API_KEY ? "SET" : "MISSING"
+    );
+    console.log(
+      "CLOUDINARY_API_SECRET:",
+      process.env.CLOUDINARY_API_SECRET ? "SET" : "MISSING"
+    );
   });
 });
 

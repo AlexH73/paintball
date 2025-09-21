@@ -17,6 +17,13 @@ const EventsList = () => {
           key={event._id || event.id}
           className="p-6 hover:shadow-lg transition-shadow"
         >
+          {event.photos && event.photos.length > 0 && (
+            <img
+              src={event.photos[0]}
+              alt={event.title}
+              className="w-full h-48 object-cover rounded-t-lg"
+            />
+          )}
           <h3 className="text-xl font-semibold mb-2 text-gray-800">
             {event.title}
           </h3>
