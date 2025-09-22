@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer } from "react";
 
 interface AppState {
+  error: string;
   events: any[];
   loading: boolean;
 }
