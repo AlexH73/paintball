@@ -18,26 +18,27 @@ const authenticate = (req, res, next) => {
   next();
 };
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://paintball-alexh73s-projects.vercel.app",
-  "https://paintball-production.up.railway.app",
-  "https://paintball-seven.vercel.app",
-  "https://paintball-*-alexh73s-projects.vercel.app",
-];
+// const allowedOrigins = [
+//   "http://localhost:5173",
+//   "https://paintball-alexh73s-projects.vercel.app",
+//   "https://paintball-production.up.railway.app",
+//   "https://paintball-seven.vercel.app",
+//   "https://paintball-*-alexh73s-projects.vercel.app",
+// ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (
-        !origin ||
-        allowedOrigins.some((allowed) => origin.startsWith(allowed))
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    // origin: function (origin, callback) {
+    //   if (
+    //     !origin ||
+    //     allowedOrigins.some((allowed) => origin.startsWith(allowed))
+    //   ) {
+    //     callback(null, true);
+    //   } else {
+    //     callback(new Error("Not allowed by CORS"));
+    //   }
+    // },
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
