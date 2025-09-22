@@ -18,32 +18,43 @@ const authenticate = (req, res, next) => {
   next();
 };
 
-// const allowedOrigins = [
-//   "http://localhost:5173",
-//   "https://paintball-alexh73s-projects.vercel.app",
-//   "https://paintball-production.up.railway.app",
-//   "https://paintball-seven.vercel.app",
-//   "https://paintball-*-alexh73s-projects.vercel.app",
-// ];
+// В начале файла, после импортов
+const allowedOrigins = [
+  "http://localhost:5173", // для разработки
+  "https://paintball-alexh73s-projects.vercel.app",
+  "https://paintball-seven.vercel.app",
+  "https://paintball-*-alexh73s-projects.vercel.app", // все поддомены
+  "https://paintball-*-vercel.app" // все проекты Vercel
+];
 
-app.use(
-  cors({
-    // origin: function (origin, callback) {
-    //   if (
-    //     !origin ||
-    //     allowedOrigins.some((allowed) => origin.startsWith(allowed))
-    //   ) {
-    //     callback(null, true);
-    //   } else {
-    //     callback(new Error("Not allowed by CORS"));
-    //   }
-    // },
-    origin: true,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+// Замените текущий CORS middleware на этот:
+app.use(cors({
+  origin: function (origin, callback) {
+    // Разрешаем запросы без origin (например, от мобильных приложений)
+    if (!origin) return callback(null, true);
+    
+    // Проверяем, разрешен ли origin
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin.includes('*')) {
+        // Обрабатываем wildcard domains
+        const domainPattern = allowedOrigin.replace('*', '.*');
+        const regex = new RegExp(domainPattern);
+        return regex.test(origin);
+      }
+      return origin === allowedOrigin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 // Middleware
 app.options("*", cors());
