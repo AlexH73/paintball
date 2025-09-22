@@ -31,6 +31,7 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
 const initialState: AppState = {
   events: [],
   loading: false,
+  error: ""
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
