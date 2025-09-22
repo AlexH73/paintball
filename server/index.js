@@ -7,18 +7,7 @@ const uploadRoutes = require("./routes/upload");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware для проверки аутентификации
-const authenticate = (req, res, next) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
 
-  if (!token || token !== process.env.ADMIN_TOKEN) {
-    return res.status(401).json({ error: "Неавторизованный доступ" });
-  }
-
-  next();
-};
-
-// В начале файла, после импортов
 const allowedOrigins = [
   "http://localhost:5173", // для разработки
   "https://paintball-alexh73s-projects.vercel.app",
@@ -55,6 +44,19 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+
+
+// Middleware для проверки аутентификации
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+
+  if (!token || token !== process.env.ADMIN_TOKEN) {
+    return res.status(401).json({ error: "Неавторизованный доступ" });
+  }
+
+  next();
+};
 
 // Middleware
 app.options("*", cors());
