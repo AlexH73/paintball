@@ -19,23 +19,24 @@ const authenticate = (req, res, next) => {
 };
 
 const allowedOrigins = [
-  "http://localhost:5173", // Для разработки
-  "https://paintball-seven.vercel.app", // Ваш Vercel URL
-  "https://paintball-production.up.railway.app", // Замените на ваш фактический Vercel URL
+  "http://localhost:5173",
+  "https://paintball-alexh73s-projects.vercel.app",
+  "https://paintball-production.up.railway.app",
+  "https://paintball-seven.vercel.app",
+  "https://paintball-*-alexh73s-projects.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Разрешаем запросы без origin (например, из мобильных приложений)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
-        return callback(new Error(msg), false);
+      if (
+        !origin ||
+        allowedOrigins.some((allowed) => origin.startsWith(allowed))
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
       }
-      return callback(null, true);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

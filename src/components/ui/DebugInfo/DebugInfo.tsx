@@ -4,13 +4,26 @@ import { useApp } from "../../../contexts/AppContext/AppContext";
 const DebugInfo: React.FC = () => {
   const { state } = useApp();
 
-  // Проверяем, доступен ли API
   const [apiStatus, setApiStatus] = React.useState<string>("Checking...");
-  
+  const [apiUrl, setApiUrl] = React.useState<string>("");
+
   React.useEffect(() => {
     const checkApi = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/health`);
+        // Проверяем, находимся ли мы на сервере (бэкенде)
+        const isBackend = window.location.origin.includes("railway");
+
+        if (isBackend) {
+          setApiUrl("Server environment - no VITE_API_URL needed");
+          setApiStatus("OK (Server)");
+          return;
+        }
+
+        // Для фронтенда проверяем API
+        const apiUrl = import.meta.env.VITE_API_URL || "Not set";
+        setApiUrl(apiUrl);
+
+        const response = await fetch(`${apiUrl}/health`);
         if (response.ok) {
           setApiStatus("OK");
         } else {
@@ -20,7 +33,7 @@ const DebugInfo: React.FC = () => {
         setApiStatus("Offline");
       }
     };
-    
+
     checkApi();
   }, []);
 
@@ -31,9 +44,7 @@ const DebugInfo: React.FC = () => {
       <div>Events: {state.events.length}</div>
       <div>Loading: {state.loading ? "Yes" : "No"}</div>
       <div>Error: {state.error || "None"}</div>
-      <div>
-        API URL: {import.meta.env.VITE_API_URL || "Not set"}
-      </div>
+      <div>API URL: {apiUrl}</div>
       <div>API Status: {apiStatus}</div>
       <div>Current origin: {window.location.origin}</div>
       <div>Build time: {import.meta.env.BUILD_TIME || "Unknown"}</div>
