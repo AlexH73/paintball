@@ -9,7 +9,8 @@ const DebugInfo: React.FC = () => {
       <div>Events: {state.events.length}</div>
       <div>Loading: {state.loading ? "Yes" : "No"}</div>
       <div>
-        API: {import.meta.env.VITE_API_URL || "http://localhost:3001/api"}
+        API: {import.meta.env.VITE_API_URL}
+        Current origin: {window.location.origin}
       </div>
     </div>
   );
