@@ -10,6 +10,7 @@ const DebugInfo: React.FC = () => {
       <div>Loading: {state.loading ? "Yes" : "No"}</div>
       <div>
         API: {import.meta.env.VITE_API_URL}
+        <br />
         Current origin: {window.location.origin}
       </div>
     </div>
