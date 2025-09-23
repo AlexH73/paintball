@@ -7,25 +7,27 @@ const uploadRoutes = require("./routes/upload");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-
 const allowedOrigins = [
-  "http://localhost:5173", // для разработки
+  "http://localhost:5173",
   "https://paintball-alexh73s-projects.vercel.app",
   "https://paintball-seven.vercel.app",
-  "https://paintball-*-alexh73s-projects.vercel.app", // все поддомены
-  "https://paintball-*-vercel.app" // все проекты Vercel
+  "https://paintball-*-alexh73s-projects.vercel.app",
+  "https://paintball-*-vercel.app",
 ];
 
-// Замените текущий CORS middleware на этот:
-app.use(cors({
-  origin: function (origin, callback) {
-    // Разрешаем запросы без origin (например, от мобильных приложений)
+// Упрощенная и более надежная настройка CORS
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Разрешаем все origin для тестирования
+      callback(null, true);
+
+      // Для production можно использовать более строгий подход:
+      /*
     if (!origin) return callback(null, true);
     
-    // Проверяем, разрешен ли origin
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (allowedOrigin.includes('*')) {
-        // Обрабатываем wildcard domains
         const domainPattern = allowedOrigin.replace('*', '.*');
         const regex = new RegExp(domainPattern);
         return regex.test(origin);
@@ -39,13 +41,16 @@ app.use(cors({
       console.log('CORS blocked for origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+    */
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 
-
+// Явная обработка OPTIONS запросов для всех маршрутов
+app.options("*", cors());
 
 // Middleware для проверки аутентификации
 const authenticate = (req, res, next) => {
@@ -59,10 +64,18 @@ const authenticate = (req, res, next) => {
 };
 
 // Middleware
-app.options("*", cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" })); // Увеличиваем лимит для загрузки изображений
 app.use("/api/upload", uploadRoutes);
-app.use("/uploads", express.static("uploads"));
+
+// Добавим middleware для логирования запросов (для отладки)
+app.use((req, res, next) => {
+  console.log(
+    `${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${
+      req.headers.origin
+    }`
+  );
+  next();
+});
 
 // Подключение к MongoDB
 let db;
@@ -75,7 +88,6 @@ async function connectToMongo() {
     db = client.db("paintball");
     console.log("Connected to MongoDB successfully!");
 
-    // Создаем коллекцию, если она не существует
     const collections = await db.listCollections().toArray();
     const collectionExists = collections.some((col) => col.name === "events");
 
@@ -91,25 +103,30 @@ async function connectToMongo() {
 // Простые маршруты для тестирования
 app.get("/api/health", (req, res) => {
   res.json({
-    status: "Server is running!",
+    status: "Server and database are running!",
     timestamp: new Date().toISOString(),
+    database: "Connected",
   });
 });
 
 // Получить все события
 app.get("/api/events", async (req, res) => {
   try {
-    const events = await db.collection("events").find().toArray();
+    const events = await db
+      .collection("events")
+      .find()
+      .sort({ date: -1 })
+      .toArray();
 
-    // Преобразуем ObjectId в строку
     const eventsWithStringIds = events.map((event) => ({
       ...event,
       _id: event._id.toString(),
-      id: event._id.toString(), // Добавляем поле id для совместимости
+      id: event._id.toString(),
     }));
 
     res.json(eventsWithStringIds);
   } catch (error) {
+    console.error("Error fetching events:", error);
     res.status(500).json({ error: "Failed to fetch events" });
   }
 });
@@ -125,7 +142,6 @@ app.get("/api/events/:id", async (req, res) => {
       return res.status(404).json({ error: "Event not found" });
     }
 
-    // Преобразуем ObjectId в строку
     const eventWithStringId = {
       ...event,
       _id: event._id.toString(),
@@ -134,6 +150,7 @@ app.get("/api/events/:id", async (req, res) => {
 
     res.json(eventWithStringId);
   } catch (error) {
+    console.error("Error fetching event:", error);
     res.status(500).json({ error: "Failed to fetch event" });
   }
 });
@@ -143,8 +160,8 @@ app.post("/api/events", authenticate, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
-      photos: req.body.photos || [], // Добавляем пустой массив, если не предоставлено
-      videos: req.body.videos || [], // Добавляем пустой массив, если не предоставлено
+      photos: req.body.photos || [],
+      videos: req.body.videos || [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -156,6 +173,7 @@ app.post("/api/events", authenticate, async (req, res) => {
       message: "Event created successfully",
     });
   } catch (error) {
+    console.error("Error creating event:", error);
     res.status(500).json({ error: "Failed to create event" });
   }
 });
@@ -201,12 +219,30 @@ app.delete("/api/events/:id", authenticate, async (req, res) => {
   }
 });
 
+// Добавим корневой маршрут для информации
+app.get("/", (req, res) => {
+  res.json({
+    message: "Paintball API Server is running!",
+    endpoints: {
+      health: "/api/health",
+      events: "/api/events",
+      upload: "/api/upload",
+    },
+    documentation:
+      "See frontend at https://paintball-alexh73s-projects.vercel.app/",
+  });
+});
+
+// Обработка 404 для API маршрутов
+app.use("/api/*", (req, res) => {
+  res.status(404).json({ error: "API endpoint not found" });
+});
+
 // Запуск сервера
 connectToMongo().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/api/health`);
-    console.log("====Current working directory:", process.cwd());
     console.log("====Environment variables loaded:====");
     console.log(
       "CLOUDINARY_CLOUD_NAME:",
