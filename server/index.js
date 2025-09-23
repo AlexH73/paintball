@@ -20,28 +20,27 @@ app.use(
   cors({
     origin: function (origin, callback) {
       // Разрешаем все origin для тестирования
-      callback(null, true);
+      //callback(null, true);
 
       // Для production можно использовать более строгий подход:
-      /*
-    if (!origin) return callback(null, true);
-    
-    const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (allowedOrigin.includes('*')) {
-        const domainPattern = allowedOrigin.replace('*', '.*');
-        const regex = new RegExp(domainPattern);
-        return regex.test(origin);
+
+      if (!origin) return callback(null, true);
+
+      const isAllowed = allowedOrigins.some((allowedOrigin) => {
+        if (allowedOrigin.includes("*")) {
+          const domainPattern = allowedOrigin.replace("*", ".*");
+          const regex = new RegExp(domainPattern);
+          return regex.test(origin);
+        }
+        return origin === allowedOrigin;
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.log("CORS blocked for origin:", origin);
+        callback(new Error("Not allowed by CORS"));
       }
-      return origin === allowedOrigin;
-    });
-    
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-    */
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
